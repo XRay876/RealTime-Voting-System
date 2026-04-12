@@ -1,4 +1,7 @@
 package com.example.polls_service.exception;
 
-public class ForbiddenException {
+public class ForbiddenException extends RuntimeException {
+    public ForbiddenException(String message) {
+        super(message);
+    }
 }
