@@ -32,7 +32,7 @@ public class CandidateService {
         }
 
         Candidate candidate = Candidate.builder()
-                .pollId(pollId)
+                .poll(poll)
                 .name(request.getName())
                 .description(request.getDescription())
                 .createdAt(LocalDateTime.now())
@@ -48,7 +48,7 @@ public class CandidateService {
         Candidate candidate = candidateRepository.findById(candidateId)
                 .orElseThrow(() -> new NotFoundException("Candidate not found with id: " + candidateId));
 
-        Poll poll = pollService.getPollEntity(candidate.getPollId());
+        Poll poll = candidate.getPoll();
         if (poll.getStatus() == PollStatus.CLOSED) {
             throw new BadRequestException("Cannot update candidate in a closed poll");
         }
@@ -66,7 +66,7 @@ public class CandidateService {
         Candidate candidate = candidateRepository.findById(candidateId)
                 .orElseThrow(() -> new NotFoundException("Candidate not found with id: " + candidateId));
 
-        Poll poll = pollService.getPollEntity(candidate.getPollId());
+        Poll poll = candidate.getPoll();
         if (poll.getStatus() == PollStatus.CLOSED) {
             throw new BadRequestException("Cannot delete candidate from a closed poll");
         }
@@ -83,7 +83,7 @@ public class CandidateService {
     private CandidateResponse map(Candidate candidate) {
         return CandidateResponse.builder()
                 .id(candidate.getId())
-                .pollId(candidate.getPollId())
+                .pollId(candidate.getPoll().getId())
                 .name(candidate.getName())
                 .description(candidate.getDescription())
                 .build();

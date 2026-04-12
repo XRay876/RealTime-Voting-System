@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Table(
         name = "votes",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_poll_user", columnNames = {"pollId", "userId"})
+                @UniqueConstraint(name = "uk_poll_user", columnNames = {"poll_id", "user_id"})
         }
 )
 @Getter
@@ -23,13 +23,15 @@ public class Vote {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long pollId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "poll_id", nullable = false)
+    private Poll poll;
 
-    @Column(nullable = false)
-    private Long candidateId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "candidate_id", nullable = false)
+    private Candidate candidate;
 
-    @Column(nullable = false)
+    @Column(name = "user_id", nullable = false)
     private String userId;
 
     @Column(nullable = false)

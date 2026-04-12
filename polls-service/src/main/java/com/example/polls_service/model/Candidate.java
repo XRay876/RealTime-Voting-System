@@ -18,8 +18,9 @@ public class Candidate {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long pollId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "poll_id", nullable = false)
+    private Poll poll;
 
     @Column(nullable = false)
     private String name;

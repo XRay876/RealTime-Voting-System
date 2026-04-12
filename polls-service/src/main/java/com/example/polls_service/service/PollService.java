@@ -83,10 +83,7 @@ public class PollService {
 
     public void deletePoll(Long pollId, CurrentUser currentUser) {
         requireAdmin(currentUser);
-
         Poll poll = getPollEntity(pollId);
-        List<Candidate> candidates = candidateRepository.findByPollId(pollId);
-        candidateRepository.deleteAll(candidates);
         pollRepository.delete(poll);
     }
 
@@ -116,7 +113,7 @@ public class PollService {
         return candidates.stream()
                 .map(candidate -> CandidateResponse.builder()
                         .id(candidate.getId())
-                        .pollId(candidate.getPollId())
+                        .pollId(candidate.getPoll().getId())
                         .name(candidate.getName())
                         .description(candidate.getDescription())
                         .build())

@@ -45,8 +45,8 @@ public class VoteService {
         }
 
         Vote vote = Vote.builder()
-                .pollId(pollId)
-                .candidateId(candidate.getId())
+                .poll(poll)
+                .candidate(candidate)
                 .userId(currentUser.getUserId())
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -64,8 +64,8 @@ public class VoteService {
                 .orElseThrow(() -> new NotFoundException("No vote found for this user in this poll"));
 
         return MyVoteResponse.builder()
-                .pollId(vote.getPollId())
-                .candidateId(vote.getCandidateId())
+                .pollId(vote.getPoll().getId())
+                .candidateId(vote.getCandidate().getId())
                 .build();
     }
 
