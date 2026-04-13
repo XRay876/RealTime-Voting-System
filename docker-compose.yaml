@@ -1,18 +1,19 @@
 version: '3.8'
 
 services:
-  auth-db:
-    image: postgres:15-alpine
-    container_name: auth-db
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: auth_db
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: auth_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
     ports:
-      - "5432:5432"
+      - "3306:3306"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d auth_db"]
-      interval: 5s
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 10s
       timeout: 5s
       retries: 5
 
@@ -22,10 +23,10 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      auth-db:
+      mysql-db:
         condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://auth-db:5432/auth_db
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/auth_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
       - SPRING_DATASOURCE_USERNAME=user
       - SPRING_DATASOURCE_PASSWORD=password
       - JWT_SECRET=rZ5ET8T7nZ8wwczAInOPKfRGNJhIeyUM32b0TVAwzCYweqe21321Dwqe123
