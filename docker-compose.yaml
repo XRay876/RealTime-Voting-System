@@ -32,3 +32,17 @@ services:
       - JWT_SECRET=rZ5ET8T7nZ8wwczAInOPKfRGNJhIeyUM32b0TVAwzCYweqe21321Dwqe123
       - JWT_ACCESS_EXPIRATION=3600000
       - JWT_REFRESH_EXPIRATION=604800000
+
+  polls-service:
+    build: ./polls-service
+    container_name: polls-service
+    ports:
+      - "8081:8080"
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/auth_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - JWT_SECRET=rZ5ET8T7nZ8wwczAInOPKfRGNJhIeyUM32b0TVAwzCYweqe21321Dwqe123
