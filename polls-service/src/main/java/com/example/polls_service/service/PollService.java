@@ -4,20 +4,23 @@ import com.example.polls_service.dto.request.CreatePollRequest;
 import com.example.polls_service.dto.request.UpdatePollRequest;
 import com.example.polls_service.dto.response.CandidateResponse;
 import com.example.polls_service.dto.response.PollResponse;
-import com.example.polls_service.exception.ForbiddenException;
 import com.example.polls_service.exception.NotFoundException;
 import com.example.polls_service.model.Candidate;
 import com.example.polls_service.model.Poll;
 import com.example.polls_service.model.PollStatus;
 import com.example.polls_service.repository.CandidateRepository;
 import com.example.polls_service.repository.PollRepository;
-import com.example.polls_service.security.CurrentUser;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PollService {
@@ -25,20 +28,19 @@ public class PollService {
     private final PollRepository pollRepository;
     private final CandidateRepository candidateRepository;
 
-    public PollResponse createPoll(CreatePollRequest request, CurrentUser currentUser) {
-        requireAdmin(currentUser);
-
-        Poll poll = Poll.builder()
-                .title(request.getTitle())
-                .description(request.getDescription())
-                .status(PollStatus.DRAFT)
-                .createdBy(currentUser.getUserId())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
+    @Transactional
+    public PollResponse createPoll(CreatePollRequest request, UUID adminId) {
+        log.info("Admin {} is creating a new poll: {}", adminId, request.getTitle());
+        Poll poll = new Poll();
+        poll.setTitle(request.getTitle());
+        poll.setDescription(request.getDescription());
+        poll.setStatus(PollStatus.DRAFT);
+        poll.setCreatedBy(adminId);
+        poll.setCreatedAt(LocalDateTime.now());
+        poll.setUpdatedAt(LocalDateTime.now());
 
         Poll saved = pollRepository.save(poll);
-        return mapPollResponse(saved, List.of());
+        return mapPollResponse(saved, new ArrayList<>());
     }
 
     public List<PollResponse> getAllPolls() {
@@ -56,9 +58,21 @@ public class PollService {
         return mapPollResponse(poll, candidates);
     }
 
-    public PollResponse updatePoll(Long pollId, UpdatePollRequest request, CurrentUser currentUser) {
-        requireAdmin(currentUser);
+    public List<PollResponse> getMyPolls(UUID adminId) {
+        log.info("Fetching polls created by admin: {}", adminId);
 
+        List<Poll> polls = pollRepository.findByCreatedBy(adminId);
+
+        return polls.stream()
+                .map(poll -> mapPollResponse(
+                        poll,
+                        mapCandidates(candidateRepository.findByPollId(poll.getId()))
+                ))
+                .toList();
+    }
+
+    @Transactional
+    public PollResponse updatePoll(Long pollId, UpdatePollRequest request) {
         Poll poll = getPollEntity(pollId);
         poll.setTitle(request.getTitle());
         poll.setDescription(request.getDescription());
@@ -69,9 +83,8 @@ public class PollService {
         return mapPollResponse(saved, candidates);
     }
 
-    public PollResponse updatePollStatus(Long pollId, PollStatus status, CurrentUser currentUser) {
-        requireAdmin(currentUser);
-
+    @Transactional
+    public PollResponse updatePollStatus(Long pollId, PollStatus status) {
         Poll poll = getPollEntity(pollId);
         poll.setStatus(status);
         poll.setUpdatedAt(LocalDateTime.now());
@@ -81,8 +94,8 @@ public class PollService {
         return mapPollResponse(saved, candidates);
     }
 
-    public void deletePoll(Long pollId, CurrentUser currentUser) {
-        requireAdmin(currentUser);
+    @Transactional
+    public void deletePoll(Long pollId) {
         Poll poll = getPollEntity(pollId);
         pollRepository.delete(poll);
     }
@@ -90,12 +103,6 @@ public class PollService {
     public Poll getPollEntity(Long pollId) {
         return pollRepository.findById(pollId)
                 .orElseThrow(() -> new NotFoundException("Poll not found with id: " + pollId));
-    }
-
-    private void requireAdmin(CurrentUser currentUser) {
-        if (!currentUser.isAdmin()) {
-            throw new ForbiddenException("Admin role required");
-        }
     }
 
     private PollResponse mapPollResponse(Poll poll, List<CandidateResponse> candidates) {

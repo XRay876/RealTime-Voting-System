@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -13,6 +14,6 @@ public class PollResponse {
     private String title;
     private String description;
     private PollStatus status;
-    private String createdBy;
+    private UUID createdBy;
     private List<CandidateResponse> candidates;
 }

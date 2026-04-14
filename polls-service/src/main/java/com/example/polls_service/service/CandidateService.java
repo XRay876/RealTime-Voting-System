@@ -4,16 +4,13 @@ import com.example.polls_service.dto.request.AddCandidateRequest;
 import com.example.polls_service.dto.request.UpdateCandidateRequest;
 import com.example.polls_service.dto.response.CandidateResponse;
 import com.example.polls_service.exception.BadRequestException;
-import com.example.polls_service.exception.ForbiddenException;
 import com.example.polls_service.exception.NotFoundException;
 import com.example.polls_service.model.Candidate;
 import com.example.polls_service.model.Poll;
 import com.example.polls_service.model.PollStatus;
 import com.example.polls_service.repository.CandidateRepository;
-import com.example.polls_service.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 
 @Service
@@ -23,9 +20,7 @@ public class CandidateService {
     private final CandidateRepository candidateRepository;
     private final PollService pollService;
 
-    public CandidateResponse addCandidate(Long pollId, AddCandidateRequest request, CurrentUser currentUser) {
-        requireAdmin(currentUser);
-
+    public CandidateResponse addCandidate(Long pollId, AddCandidateRequest request) {
         Poll poll = pollService.getPollEntity(pollId);
         if (poll.getStatus() == PollStatus.CLOSED) {
             throw new BadRequestException("Cannot add candidate to a closed poll");
@@ -38,46 +33,32 @@ public class CandidateService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        Candidate saved = candidateRepository.save(candidate);
-        return map(saved);
+        return map(candidateRepository.save(candidate));
     }
 
-    public CandidateResponse updateCandidate(Long candidateId, UpdateCandidateRequest request, CurrentUser currentUser) {
-        requireAdmin(currentUser);
-
+    public CandidateResponse updateCandidate(Long candidateId, UpdateCandidateRequest request) {
         Candidate candidate = candidateRepository.findById(candidateId)
                 .orElseThrow(() -> new NotFoundException("Candidate not found with id: " + candidateId));
 
-        Poll poll = candidate.getPoll();
-        if (poll.getStatus() == PollStatus.CLOSED) {
+        if (candidate.getPoll().getStatus() == PollStatus.CLOSED) {
             throw new BadRequestException("Cannot update candidate in a closed poll");
         }
 
         candidate.setName(request.getName());
         candidate.setDescription(request.getDescription());
 
-        Candidate saved = candidateRepository.save(candidate);
-        return map(saved);
+        return map(candidateRepository.save(candidate));
     }
 
-    public void deleteCandidate(Long candidateId, CurrentUser currentUser) {
-        requireAdmin(currentUser);
-
+    public void deleteCandidate(Long candidateId) {
         Candidate candidate = candidateRepository.findById(candidateId)
                 .orElseThrow(() -> new NotFoundException("Candidate not found with id: " + candidateId));
 
-        Poll poll = candidate.getPoll();
-        if (poll.getStatus() == PollStatus.CLOSED) {
+        if (candidate.getPoll().getStatus() == PollStatus.CLOSED) {
             throw new BadRequestException("Cannot delete candidate from a closed poll");
         }
 
         candidateRepository.delete(candidate);
-    }
-
-    private void requireAdmin(CurrentUser currentUser) {
-        if (!currentUser.isAdmin()) {
-            throw new ForbiddenException("Admin role required");
-        }
     }
 
     private CandidateResponse map(Candidate candidate) {

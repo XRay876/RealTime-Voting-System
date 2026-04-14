@@ -6,6 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "polls")
@@ -30,8 +31,8 @@ public class Poll {
     @Column(nullable = false)
     private PollStatus status;
 
-    @Column(nullable = false)
-    private String createdBy;
+    @Column(name = "created_by", nullable = false)
+    private UUID createdBy;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
@@ -46,4 +47,5 @@ public class Poll {
     @OneToMany(mappedBy = "poll", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Vote> votes = new ArrayList<>();
+
 }

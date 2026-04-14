@@ -3,44 +3,47 @@ package com.example.polls_service.controller;
 import com.example.polls_service.dto.request.VoteRequest;
 import com.example.polls_service.dto.response.MyVoteResponse;
 import com.example.polls_service.dto.response.PollResultsResponse;
-import com.example.polls_service.security.CurrentUser;
-import com.example.polls_service.security.RequestUserContext;
+import com.example.polls_service.security.UserDetailsImpl;
 import com.example.polls_service.service.VoteService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/polls")
 @RequiredArgsConstructor
+@Slf4j
 public class VoteController {
 
     private final VoteService voteService;
-    private final RequestUserContext requestUserContext;
 
     @PostMapping("/{id}/vote")
-    @ResponseStatus(HttpStatus.CREATED)
-    public Map<String, String> castVote(@PathVariable Long id,
-                                        @Valid @RequestBody VoteRequest request,
-                                        HttpServletRequest httpServletRequest) {
-        CurrentUser currentUser = requestUserContext.getCurrentUser(httpServletRequest);
-        voteService.castVote(id, request, currentUser);
-        return Map.of("message", "Vote recorded successfully");
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<Void> castVote(
+            @PathVariable Long id,
+            @Valid @RequestBody VoteRequest request,
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
+
+        log.info("User {} casting vote for candidate {} in poll {}", currentUser.getId(), request.getCandidateId(), id);
+        voteService.castVote(id, request.getCandidateId(), currentUser.getId());
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{id}/my-vote")
-    public MyVoteResponse getMyVote(@PathVariable Long id,
-                                    HttpServletRequest httpServletRequest) {
-        CurrentUser currentUser = requestUserContext.getCurrentUser(httpServletRequest);
-        return voteService.getMyVote(id, currentUser);
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<MyVoteResponse> getMyVote(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        return ResponseEntity.ok(voteService.getMyVote(id, currentUser.getId()));
     }
 
     @GetMapping("/{id}/results")
-    public PollResultsResponse getResults(@PathVariable Long id) {
-        return voteService.getResults(id);
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<PollResultsResponse> getResults(@PathVariable Long id) {
+        return ResponseEntity.ok(voteService.getResults(id));
     }
 }
