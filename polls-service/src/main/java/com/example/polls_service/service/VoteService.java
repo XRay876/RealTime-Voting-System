@@ -13,13 +13,14 @@ import com.example.polls_service.model.PollStatus;
 import com.example.polls_service.model.Vote;
 import com.example.polls_service.repository.CandidateRepository;
 import com.example.polls_service.repository.VoteRepository;
-import com.example.polls_service.security.CurrentUser;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -30,24 +31,25 @@ public class VoteService {
     private final PollService pollService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    public void castVote(Long pollId, VoteRequest request, CurrentUser currentUser) {
+    @Transactional
+    public void castVote(Long pollId, Long candidateId, UUID userId) {
         Poll poll = pollService.getPollEntity(pollId);
 
         if (poll.getStatus() != PollStatus.OPEN) {
             throw new BadRequestException("Poll is not open for voting");
         }
 
-        Candidate candidate = candidateRepository.findByIdAndPollId(request.getCandidateId(), pollId)
+        Candidate candidate = candidateRepository.findByIdAndPollId(candidateId, pollId)
                 .orElseThrow(() -> new NotFoundException("Candidate not found in this poll"));
 
-        if (voteRepository.existsByPollIdAndUserId(pollId, currentUser.getUserId())) {
+        if (voteRepository.existsByPollIdAndUserId(pollId, userId)) {
             throw new ConflictException("User has already voted in this poll");
         }
 
         Vote vote = Vote.builder()
                 .poll(poll)
                 .candidate(candidate)
-                .userId(currentUser.getUserId())
+                .userId(userId)
                 .createdAt(LocalDateTime.now())
                 .build();
 
@@ -57,10 +59,10 @@ public class VoteService {
         messagingTemplate.convertAndSend("/topic/poll/" + pollId + "/results", results);
     }
 
-    public MyVoteResponse getMyVote(Long pollId, CurrentUser currentUser) {
+    public MyVoteResponse getMyVote(Long pollId, UUID userId) {
         pollService.getPollEntity(pollId);
 
-        Vote vote = voteRepository.findByPollIdAndUserId(pollId, currentUser.getUserId())
+        Vote vote = voteRepository.findByPollIdAndUserId(pollId, userId)
                 .orElseThrow(() -> new NotFoundException("No vote found for this user in this poll"));
 
         return MyVoteResponse.builder()

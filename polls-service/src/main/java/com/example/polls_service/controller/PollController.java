@@ -4,13 +4,14 @@ import com.example.polls_service.dto.request.CreatePollRequest;
 import com.example.polls_service.dto.request.UpdatePollRequest;
 import com.example.polls_service.dto.request.UpdatePollStatusRequest;
 import com.example.polls_service.dto.response.PollResponse;
-import com.example.polls_service.security.CurrentUser;
-import com.example.polls_service.security.RequestUserContext;
+import com.example.polls_service.security.UserDetailsImpl;
 import com.example.polls_service.service.PollService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,48 +22,56 @@ import java.util.List;
 public class PollController {
 
     private final PollService pollService;
-    private final RequestUserContext requestUserContext;
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public PollResponse createPoll(@Valid @RequestBody CreatePollRequest request,
-                                   HttpServletRequest httpServletRequest) {
-        CurrentUser currentUser = requestUserContext.getCurrentUser(httpServletRequest);
-        return pollService.createPoll(request, currentUser);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PollResponse> createPoll(
+            @Valid @RequestBody CreatePollRequest request,
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
+
+        PollResponse response = pollService.createPoll(request, currentUser.getId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
-    public List<PollResponse> getAllPolls() {
-        return pollService.getAllPolls();
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<List<PollResponse>> getAllPolls() {
+        return ResponseEntity.ok(pollService.getAllPolls());
     }
 
     @GetMapping("/{id}")
-    public PollResponse getPollById(@PathVariable Long id) {
-        return pollService.getPollById(id);
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<PollResponse> getPollById(@PathVariable Long id) {
+        return ResponseEntity.ok(pollService.getPollById(id));
     }
 
     @PutMapping("/{id}")
-    public PollResponse updatePoll(@PathVariable Long id,
-                                   @Valid @RequestBody UpdatePollRequest request,
-                                   HttpServletRequest httpServletRequest) {
-        CurrentUser currentUser = requestUserContext.getCurrentUser(httpServletRequest);
-        return pollService.updatePoll(id, request, currentUser);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PollResponse> updatePoll(@PathVariable Long id,
+                                                   @Valid @RequestBody UpdatePollRequest request) {
+        return ResponseEntity.ok(pollService.updatePoll(id, request));
     }
 
     @PatchMapping("/{id}/status")
-    public PollResponse updateStatus(@PathVariable Long id,
-                                     @Valid @RequestBody UpdatePollStatusRequest request,
-                                     HttpServletRequest httpServletRequest) {
-        CurrentUser currentUser = requestUserContext.getCurrentUser(httpServletRequest);
-        return pollService.updatePollStatus(id, request.getStatus(), currentUser);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PollResponse> updatePollStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdatePollStatusRequest request) {
+        return ResponseEntity.ok(pollService.updatePollStatus(id, request.getStatus()));
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deletePoll(@PathVariable Long id,
-                           HttpServletRequest httpServletRequest) {
-        CurrentUser currentUser = requestUserContext.getCurrentUser(httpServletRequest);
-        pollService.deletePoll(id, currentUser);
+    @PreAuthorize("hasRole('ADMIN')")
+    public void deletePoll(@PathVariable Long id) {
+        pollService.deletePoll(id);
+    }
+
+    @GetMapping("/my-polls")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<PollResponse>> getMyPolls(
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
+
+        List<PollResponse> myPolls = pollService.getMyPolls(currentUser.getId());
+        return ResponseEntity.ok(myPolls);
     }
 }
-
