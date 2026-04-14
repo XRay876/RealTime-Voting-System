@@ -2,13 +2,13 @@ package com.example.polls_service.service;
 
 import com.example.polls_service.dto.request.CreatePollRequest;
 import com.example.polls_service.dto.request.UpdatePollRequest;
-import com.example.polls_service.dto.response.CandidateResponse;
+import com.example.polls_service.dto.response.PollOptionResponse;
 import com.example.polls_service.dto.response.PollResponse;
 import com.example.polls_service.exception.NotFoundException;
-import com.example.polls_service.model.Candidate;
+import com.example.polls_service.model.PollOption;
 import com.example.polls_service.model.Poll;
 import com.example.polls_service.model.PollStatus;
-import com.example.polls_service.repository.CandidateRepository;
+import com.example.polls_service.repository.PollOptionRepository;
 import com.example.polls_service.repository.PollRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -26,18 +26,20 @@ import java.util.UUID;
 public class PollService {
 
     private final PollRepository pollRepository;
-    private final CandidateRepository candidateRepository;
+    private final PollOptionRepository pollOptionRepository;
 
     @Transactional
     public PollResponse createPoll(CreatePollRequest request, UUID adminId) {
         log.info("Admin {} is creating a new poll: {}", adminId, request.getTitle());
-        Poll poll = new Poll();
-        poll.setTitle(request.getTitle());
-        poll.setDescription(request.getDescription());
-        poll.setStatus(PollStatus.DRAFT);
-        poll.setCreatedBy(adminId);
-        poll.setCreatedAt(LocalDateTime.now());
-        poll.setUpdatedAt(LocalDateTime.now());
+        Poll poll = Poll.builder()
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .status(PollStatus.DRAFT)
+                .multipleChoice(request.isMultipleChoice())
+                .createdBy(adminId)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
 
         Poll saved = pollRepository.save(poll);
         return mapPollResponse(saved, new ArrayList<>());
@@ -47,26 +49,23 @@ public class PollService {
         return pollRepository.findAll().stream()
                 .map(poll -> mapPollResponse(
                         poll,
-                        mapCandidates(candidateRepository.findByPollId(poll.getId()))
+                        mapOptions(pollOptionRepository.findByPollId(poll.getId()))
                 ))
                 .toList();
     }
 
     public PollResponse getPollById(Long pollId) {
         Poll poll = getPollEntity(pollId);
-        List<CandidateResponse> candidates = mapCandidates(candidateRepository.findByPollId(pollId));
-        return mapPollResponse(poll, candidates);
+        List<PollOptionResponse> options = mapOptions(pollOptionRepository.findByPollId(pollId));
+        return mapPollResponse(poll, options);
     }
 
     public List<PollResponse> getMyPolls(UUID adminId) {
-        log.info("Fetching polls created by admin: {}", adminId);
-
         List<Poll> polls = pollRepository.findByCreatedBy(adminId);
-
         return polls.stream()
                 .map(poll -> mapPollResponse(
                         poll,
-                        mapCandidates(candidateRepository.findByPollId(poll.getId()))
+                        mapOptions(pollOptionRepository.findByPollId(poll.getId()))
                 ))
                 .toList();
     }
@@ -76,11 +75,11 @@ public class PollService {
         Poll poll = getPollEntity(pollId);
         poll.setTitle(request.getTitle());
         poll.setDescription(request.getDescription());
+        poll.setMultipleChoice(request.isMultipleChoice());
         poll.setUpdatedAt(LocalDateTime.now());
 
         Poll saved = pollRepository.save(poll);
-        List<CandidateResponse> candidates = mapCandidates(candidateRepository.findByPollId(saved.getId()));
-        return mapPollResponse(saved, candidates);
+        return mapPollResponse(saved, mapOptions(pollOptionRepository.findByPollId(saved.getId())));
     }
 
     @Transactional
@@ -90,8 +89,7 @@ public class PollService {
         poll.setUpdatedAt(LocalDateTime.now());
 
         Poll saved = pollRepository.save(poll);
-        List<CandidateResponse> candidates = mapCandidates(candidateRepository.findByPollId(saved.getId()));
-        return mapPollResponse(saved, candidates);
+        return mapPollResponse(saved, mapOptions(pollOptionRepository.findByPollId(saved.getId())));
     }
 
     @Transactional
@@ -105,24 +103,25 @@ public class PollService {
                 .orElseThrow(() -> new NotFoundException("Poll not found with id: " + pollId));
     }
 
-    private PollResponse mapPollResponse(Poll poll, List<CandidateResponse> candidates) {
+    private PollResponse mapPollResponse(Poll poll, List<PollOptionResponse> options) {
         return PollResponse.builder()
                 .id(poll.getId())
                 .title(poll.getTitle())
                 .description(poll.getDescription())
                 .status(poll.getStatus())
+                .multipleChoice(poll.isMultipleChoice())
                 .createdBy(poll.getCreatedBy())
-                .candidates(candidates)
+                .options(options)
                 .build();
     }
 
-    private List<CandidateResponse> mapCandidates(List<Candidate> candidates) {
-        return candidates.stream()
-                .map(candidate -> CandidateResponse.builder()
-                        .id(candidate.getId())
-                        .pollId(candidate.getPoll().getId())
-                        .name(candidate.getName())
-                        .description(candidate.getDescription())
+    private List<PollOptionResponse> mapOptions(List<PollOption> options) {
+        return options.stream()
+                .map(option -> PollOptionResponse.builder()
+                        .id(option.getId())
+                        .pollId(option.getPoll().getId())
+                        .name(option.getName())
+                        .description(option.getDescription())
                         .build())
                 .toList();
     }

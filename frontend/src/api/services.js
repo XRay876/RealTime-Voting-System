@@ -1,24 +1,37 @@
 import { apiClient } from './client';
 
 export const AuthService = {
-  login: async (data) => await apiClient.post('/api/v1/auth/login', data),
-  register: async (data) => await apiClient.post('/api/v1/auth/register', data),
+  login: (data) => apiClient.post('/api/v1/auth/login', data),
+  register: (data) => apiClient.post('/api/v1/auth/register', data),
 };
 
 export const UserService = {
-  getCurrentUser: async () => await apiClient.get('/api/v1/users/me'),
+  getCurrentUser: () => apiClient.get('/api/v1/users/me'),
   updateProfile: (data) => apiClient.put('/api/v1/users/me', data),
   changePassword: (data) => apiClient.patch('/api/v1/users/me/password', data),
   promoteToAdmin: () => apiClient.post('/api/v1/users/promote-me'),
-  getUserById: async (id) => await apiClient.get(`/api/v1/admin/users/${id}`),
+  getUserById: (id) => apiClient.get(`/api/v1/admin/users/${id}`),
 };
 
 export const PollsService = {
-  getAllPolls: async () => await apiClient.get('/api/polls'),
-  getPollById: async (id) => await apiClient.get(`/api/polls/${id}`),
-  getMyPolls: async () => await apiClient.get('/api/polls/my-polls'),
-  createPoll: async (data) => await apiClient.post('/api/polls', data),
-  updatePollStatus: async (id, status) => await apiClient.patch(`/api/polls/${id}/status`, { status }),
-  deletePoll: async (id) => await apiClient.delete(`/api/polls/${id}`),
-  vote: (pollId, candidateId) => apiClient.post(`/api/polls/${pollId}/vote`, { candidateId }),
+  getAllPolls: () => apiClient.get('/api/polls'),
+  getPollById: (id) => apiClient.get(`/api/polls/${id}`),
+  getMyPolls: () => apiClient.get('/api/polls/my-polls'),
+  createPoll: (data) => apiClient.post('/api/polls', data),
+  updatePoll: (id, data) => apiClient.put(`/api/polls/${id}`, data),
+  updatePollStatus: (id, status) => apiClient.patch(`/api/polls/${id}/status`, { status }),
+  deletePoll: (id) => apiClient.delete(`/api/polls/${id}`),
+  
+  // Options
+  addOption: (pollId, data) => apiClient.post(`/api/polls/${pollId}/options`, data),
+  deleteOption: (optionId) => apiClient.delete(`/api/options/${optionId}`),
+
+  // Voting
+  vote: (pollId, optionIds) => apiClient.post(`/api/polls/${pollId}/vote`, { optionIds }),
+  cancelVote: (pollId) => apiClient.delete(`/api/polls/${pollId}/vote`),
+  getMyVote: (pollId) => apiClient.get(`/api/polls/${pollId}/my-vote`),
+  getResults: (pollId) => apiClient.get(`/api/polls/${pollId}/results`),
+  
+  // Admin Management
+  removeParticipant: (pollId, userId) => apiClient.delete(`/api/polls/${pollId}/participants/${userId}`),
 };

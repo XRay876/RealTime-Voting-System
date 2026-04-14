@@ -5,16 +5,15 @@ import com.example.polls_service.dto.response.MyVoteResponse;
 import com.example.polls_service.dto.response.PollResultItemResponse;
 import com.example.polls_service.dto.response.PollResultsResponse;
 import com.example.polls_service.exception.BadRequestException;
-import com.example.polls_service.exception.ConflictException;
-import com.example.polls_service.exception.NotFoundException;
-import com.example.polls_service.model.Candidate;
+import com.example.polls_service.model.PollOption;
 import com.example.polls_service.model.Poll;
 import com.example.polls_service.model.PollStatus;
 import com.example.polls_service.model.Vote;
-import com.example.polls_service.repository.CandidateRepository;
+import com.example.polls_service.repository.PollOptionRepository;
 import com.example.polls_service.repository.VoteRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -22,72 +21,106 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VoteService {
 
     private final VoteRepository voteRepository;
-    private final CandidateRepository candidateRepository;
+    private final PollOptionRepository pollOptionRepository;
     private final PollService pollService;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
-    public void castVote(Long pollId, Long candidateId, UUID userId) {
+    public void castVote(Long pollId, VoteRequest request, UUID userId) {
         Poll poll = pollService.getPollEntity(pollId);
 
         if (poll.getStatus() != PollStatus.OPEN) {
             throw new BadRequestException("Poll is not open for voting");
         }
 
-        Candidate candidate = candidateRepository.findByIdAndPollId(candidateId, pollId)
-                .orElseThrow(() -> new NotFoundException("Candidate not found in this poll"));
-
-        if (voteRepository.existsByPollIdAndUserId(pollId, userId)) {
-            throw new ConflictException("User has already voted in this poll");
+        if (!poll.isMultipleChoice() && request.getOptionIds().size() > 1) {
+            throw new BadRequestException("This poll allows only a single choice.");
         }
 
-        Vote vote = Vote.builder()
-                .poll(poll)
-                .candidate(candidate)
-                .userId(userId)
-                .createdAt(LocalDateTime.now())
-                .build();
+        // Автоматически удаляем старые голоса юзера (переголосование)
+        voteRepository.deleteByPollIdAndUserId(pollId, userId);
 
-        voteRepository.save(vote);
+        List<PollOption> options = pollOptionRepository.findAllById(request.getOptionIds());
+        for (PollOption option : options) {
+            if (!option.getPoll().getId().equals(pollId)) {
+                throw new BadRequestException("Option " + option.getId() + " does not belong to this poll");
+            }
 
-        PollResultsResponse results = getResults(pollId);
-        messagingTemplate.convertAndSend("/topic/poll/" + pollId + "/results", results);
+            Vote vote = Vote.builder()
+                    .poll(poll)
+                    .option(option)
+                    .userId(userId)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            voteRepository.save(vote);
+        }
+
+        broadcastUpdate(pollId);
+    }
+
+    @Transactional
+    public void cancelVote(Long pollId, UUID userId) {
+        Poll poll = pollService.getPollEntity(pollId);
+        if (poll.getStatus() != PollStatus.OPEN) {
+            throw new BadRequestException("Cannot cancel vote in a closed/draft poll");
+        }
+
+        voteRepository.deleteByPollIdAndUserId(pollId, userId);
+        broadcastUpdate(pollId);
+    }
+
+    @Transactional
+    public void removeParticipantByAdmin(Long pollId, UUID participantId) {
+        log.info("Admin removing participant {} from poll {}", participantId, pollId);
+        voteRepository.deleteByPollIdAndUserId(pollId, participantId);
+        broadcastUpdate(pollId);
     }
 
     public MyVoteResponse getMyVote(Long pollId, UUID userId) {
         pollService.getPollEntity(pollId);
+        List<Vote> votes = voteRepository.findByPollIdAndUserId(pollId, userId);
 
-        Vote vote = voteRepository.findByPollIdAndUserId(pollId, userId)
-                .orElseThrow(() -> new NotFoundException("No vote found for this user in this poll"));
+        List<Long> optionIds = votes.stream()
+                .map(v -> v.getOption().getId())
+                .toList();
 
         return MyVoteResponse.builder()
-                .pollId(vote.getPoll().getId())
-                .candidateId(vote.getCandidate().getId())
+                .pollId(pollId)
+                .optionIds(optionIds)
                 .build();
     }
 
     public PollResultsResponse getResults(Long pollId) {
         Poll poll = pollService.getPollEntity(pollId);
-        List<Candidate> candidates = candidateRepository.findByPollId(pollId);
+        List<PollOption> options = pollOptionRepository.findByPollId(pollId);
 
-        List<PollResultItemResponse> resultItems = candidates.stream()
-                .map(candidate -> PollResultItemResponse.builder()
-                        .candidateId(candidate.getId())
-                        .candidateName(candidate.getName())
-                        .votes(voteRepository.countByPollIdAndCandidateId(pollId, candidate.getId()))
+        List<PollResultItemResponse> resultItems = options.stream()
+                .map(option -> PollResultItemResponse.builder()
+                        .candidateId(option.getId())
+                        .candidateName(option.getName())
+                        .votes(voteRepository.countByPollIdAndOptionId(pollId, option.getId()))
                         .build())
                 .toList();
+
+        List<UUID> participantIds = voteRepository.findParticipantIdsByPollId(pollId);
 
         return PollResultsResponse.builder()
                 .pollId(poll.getId())
                 .pollTitle(poll.getTitle())
                 .totalVotes(voteRepository.countByPollId(pollId))
                 .results(resultItems)
+                .participantIds(participantIds)
                 .build();
+    }
+
+    private void broadcastUpdate(Long pollId) {
+        PollResultsResponse results = getResults(pollId);
+        messagingTemplate.convertAndSend("/topic/poll/" + pollId + "/results", results);
     }
 }

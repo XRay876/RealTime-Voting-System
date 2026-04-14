@@ -31,6 +31,9 @@ public class Poll {
     @Column(nullable = false)
     private PollStatus status;
 
+    @Column(nullable = false)
+    private boolean multipleChoice;
+
     @Column(name = "created_by", nullable = false)
     private UUID createdBy;
 
@@ -42,10 +45,9 @@ public class Poll {
 
     @OneToMany(mappedBy = "poll", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<Candidate> candidates = new ArrayList<>();
+    private List<PollOption> options = new ArrayList<>();
 
     @OneToMany(mappedBy = "poll", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Vote> votes = new ArrayList<>();
-
 }

@@ -5,9 +5,8 @@ import lombok.Data;
 
 @Data
 public class CreatePollRequest {
-
     @NotBlank
     private String title;
-
     private String description;
+    private boolean multipleChoice;
 }

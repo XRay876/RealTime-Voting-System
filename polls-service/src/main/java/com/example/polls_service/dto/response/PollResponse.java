@@ -14,6 +14,7 @@ public class PollResponse {
     private String title;
     private String description;
     private PollStatus status;
+    private boolean multipleChoice;
     private UUID createdBy;
-    private List<CandidateResponse> candidates;
+    private List<PollOptionResponse> options;
 }

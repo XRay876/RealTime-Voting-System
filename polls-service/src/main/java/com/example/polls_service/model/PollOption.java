@@ -6,13 +6,13 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "candidates")
+@Table(name = "poll_options")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Candidate {
+public class PollOption {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

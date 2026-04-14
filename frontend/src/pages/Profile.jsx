@@ -11,6 +11,7 @@ const Profile = () => {
   const [passwords, setPasswords] = useState({ oldPassword: '', newPassword: '' });
   const [msg, setMsg] = useState({ type: '', text: '' });
   const [fieldErrors, setFieldErrors] = useState({}); 
+  const [status, setStatus] = useState('');
 
   const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
 
@@ -38,6 +39,13 @@ const Profile = () => {
       setMsg({ type: 'success', text: 'Profile updated successfully!' });
     } catch (err) {
       setMsg({ type: 'error', text: 'Failed to update profile' });
+    }
+  };
+
+  const handleAdminPromote = async () => {
+    if (window.confirm("You will become an admin and will be logged out to refresh your token. Proceed?")) {
+      await UserService.promoteToAdmin();
+      logout();
     }
   };
 
@@ -75,6 +83,34 @@ const Profile = () => {
   return (
     <div className="container">
       <div className="card">
+
+        <h2>User Profile</h2>
+        {status && <p className="alert success">{status}</p>}
+        <div className="user-info-static">
+          <p><strong>Email:</strong> {user?.email}</p>
+          <p><strong>Current Role:</strong> {user?.role}</p>
+        </div>
+
+        {user?.role !== 'ROLE_ADMIN' && (
+          <button className="btn-admin full-width mt-1" onClick={handleAdminPromote}>
+            BECOME ADMIN
+          </button>
+        )}
+
+        <form onSubmit={handleUpdateProfile} className="mt-2">
+          <h3>Personal Details</h3>
+          <div className="form-group">
+            <label>First Name</label>
+            <input value={profileData.firstName} onChange={e => setProfileData({...profileData, firstName: e.target.value})} />
+          </div>
+          <div className="form-group">
+            <label>Last Name</label>
+            <input value={profileData.lastName} onChange={e => setProfileData({...profileData, lastName: e.target.value})} />
+          </div>
+          <button type="submit" className="btn-primary">Save Changes</button>
+        </form>
+      
+
         <h2>Edit Profile</h2>
         {msg.text && <div className={`alert ${msg.type}`}>{msg.text}</div>}
         

@@ -1,11 +1,11 @@
 package com.example.polls_service.dto.request;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
+import java.util.List;
 
 @Data
 public class VoteRequest {
-
-    @NotNull
-    private Long candidateId;
+    @NotEmpty(message = "You must select at least one option")
+    private List<Long> optionIds;
 }

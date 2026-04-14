@@ -4,10 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class UpdateCandidateRequest {
-
+public class AddPollOptionRequest {
     @NotBlank
     private String name;
-
     private String description;
 }

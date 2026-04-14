@@ -8,6 +8,7 @@ import Register from './pages/Register';
 import ErrorPage from './pages/ErrorPage';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
+import PollDetails from './pages/PollDetails';
 
 import './styles/main.css';
 
@@ -23,7 +24,7 @@ function App() {
             
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<Home />} />
-              <Route path="/polls/:id" element={<div>Poll's Details</div>} />
+              <Route path="/polls/:id" element={<PollDetails />} />
               <Route path="/profile" element={<Profile />} />
             </Route>
 
