@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import axios from "axios"
+import API from "../API/API"
 import { setAuth } from "../utils/auth"
 import "../App.css"
 
@@ -11,8 +11,8 @@ export default function Login() {
     const handleLogin = async (e) => {
         e.preventDefault()
         try {
-            const res = await axios.post(
-                "http://localhost:8080/api/v1/auth/login",
+            const res = await API.post(
+                "/v1/auth/login",
                 { email, password }
             )
             setAuth(res.data)
