@@ -46,3 +46,12 @@ services:
       - SPRING_DATASOURCE_USERNAME=user
       - SPRING_DATASOURCE_PASSWORD=password
       - JWT_SECRET=rZ5ET8T7nZ8wwczAInOPKfRGNJhIeyUM32b0TVAwzCYweqe21321Dwqe123
+
+  frontend:
+    build: ./frontend
+    container_name: voting-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - auth-service
+      - polls-service
