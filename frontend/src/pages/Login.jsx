@@ -41,43 +41,52 @@ const Login = () => {
       });
       navigate('/');
     } catch (err) {
-      setErrors({ server: err.response?.data?.message || 'Invalid email or password' });
+      setErrors({ server: 'Invalid email or password' });
     }
   };
 
   return (
-    <div className="auth-container">
-      <form className="card auth-form" onSubmit={handleSubmit}>
-        <h2>Log in to the system</h2>
-        {errors.server && <div className="alert error">{errors.server}</div>}
+    <div className="auth-page">
+      <div className="auth-card smaller">
+        <header className="auth-header">
+          <h1>Welcome Back</h1>
+          <p>Please enter your details to sign in.</p>
+        </header>
+
+        {errors.server && <div className="error-alert">{errors.server}</div>}
         
-        <div className="form-group">
-          <label>Email</label>
-          <input 
-            type="email" 
-            className={errors.email ? 'input-error' : ''}
-            value={formData.email} 
-            onChange={(e) => setFormData({...formData, email: e.target.value})} 
-            placeholder="example@mail.com"
-          />
-          {errors.email && <span className="error-text">{errors.email}</span>}
-        </div>
-        
-        <div className="form-group">
-          <label>Password</label>
-          <input 
-            type="password" 
-            className={errors.password ? 'input-error' : ''}
-            value={formData.password} 
-            onChange={(e) => setFormData({...formData, password: e.target.value})} 
-            placeholder="Enter your password"
-          />
-          {errors.password && <span className="error-text">{errors.password}</span>}
-        </div>
-        
-        <button type="submit" className="btn-primary full-width">Log in</button>
-        <p className="auth-link">No account? <Link to="/register">Register</Link></p>
-      </form>
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-group">
+            <label>Email Address</label>
+            <input 
+              type="email" 
+              className={`modern-input ${errors.email ? 'has-error' : ''}`}
+              value={formData.email} 
+              onChange={(e) => setFormData({...formData, email: e.target.value})} 
+              placeholder="name@company.com"
+            />
+            {errors.email && <span className="error-hint">{errors.email}</span>}
+          </div>
+          
+          <div className="form-group">
+            <label>Password</label>
+            <input 
+              type="password" 
+              className={`modern-input ${errors.password ? 'has-error' : ''}`}
+              value={formData.password} 
+              onChange={(e) => setFormData({...formData, password: e.target.value})} 
+              placeholder="••••••••"
+            />
+            {errors.password && <span className="error-hint">{errors.password}</span>}
+          </div>
+          
+          <button type="submit" className="btn-auth-primary">Sign In</button>
+        </form>
+
+        <footer className="auth-footer">
+          <p>Don't have an account? <Link to="/register" className="accent-link">Register</Link></p>
+        </footer>
+      </div>
     </div>
   );
 };

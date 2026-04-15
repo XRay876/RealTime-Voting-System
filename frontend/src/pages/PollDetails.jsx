@@ -16,9 +16,9 @@ const PollDetails = () => {
   const [myVote, setMyVote] = useState([]);
   const [selectedOptions, setSelectedOptions] = useState([]);
   const [participants, setParticipants] = useState([]);
-  
   const [expandedOptions, setExpandedOptions] = useState({});
-  
+  const [notification, setNotification] = useState(null);
+
   const stompClient = useRef(null);
 
   useEffect(() => {
@@ -26,6 +26,11 @@ const PollDetails = () => {
     connectWebSocket();
     return () => disconnectWebSocket();
   }, [id]);
+
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
 
   const loadData = async () => {
     try {
@@ -46,7 +51,7 @@ const PollDetails = () => {
         setSelectedOptions(vRes.data.optionIds);
       }
     } catch (err) {
-      console.error("Failed to load poll data", err);
+      showNotification("Failed to load poll data", "error");
     }
   };
 
@@ -60,15 +65,12 @@ const PollDetails = () => {
         ids.map(uid => 
             UserService.getUserById(uid)
             .then(r => r.data)
-            .catch(err => {
-                console.warn(`Could not fetch user ${uid}`, err);
-                return null;
-            })
+            .catch(err => null)
         )
         );
         setParticipants(users.filter(u => u !== null));
     } catch (err) {
-        console.error("Error loading participants", err);
+        console.error(err);
     }
   };
 
@@ -110,9 +112,9 @@ const PollDetails = () => {
     try {
       await PollsService.vote(id, selectedOptions);
       setMyVote(selectedOptions);
-      alert("Vote submitted!");
+      showNotification("Vote submitted successfully!");
     } catch (err) {
-      alert(err.response?.data?.message || "Voting failed");
+      showNotification(err.response?.data?.message || "Voting failed", "error");
     }
   };
 
@@ -121,116 +123,128 @@ const PollDetails = () => {
       await PollsService.cancelVote(id);
       setMyVote([]);
       setSelectedOptions([]);
-      alert("Vote cancelled");
+      showNotification("Vote cancelled", "info");
     } catch (err) {
-      alert("Cancellation failed");
+      showNotification("Cancellation failed", "error");
     }
   };
 
   const removeParticipant = async (userId) => {
     if (window.confirm("Remove this user's vote?")) {
       await PollsService.removeParticipant(id, userId);
+      showNotification("User vote removed", "info");
     }
   };
 
-  if (!poll || !results) return <div className="loader">Loading...</div>;
+  if (!poll || !results) return <div className="loader-container"><div className="spinner"></div></div>;
 
   const isAdminOfThisPoll = user.id === poll.createdBy;
 
   return (
-    <div className="poll-details-container">
-      <div className="card">
-        <h1>{poll.title}</h1>
-        <p className="description">{poll.description}</p>
-        <span className={`badge status-${poll.status.toLowerCase()}`}>{poll.status}</span>
-        
-        <div className="options-section mt-2">
-          <h3>Choose your option(s):</h3>
-          {poll.options.map(opt => {
-            const optionResults = results?.results?.find(r => r.candidateId === opt.id);
-            const voterIds = optionResults?.voterIds || [];
-            const optionVoters = participants.filter(p => voterIds.includes(p.id));
-            const isExpanded = expandedOptions[opt.id];
+    <div className="poll-detail-wrapper">
+      {notification && (
+        <div className={`notification-toast ${notification.type}`}>
+          {notification.message}
+        </div>
+      )}
 
-            return (
-              <div key={opt.id} style={{ marginBottom: '15px' }}>
-                <div 
-                  className={`vote-option ${selectedOptions.includes(opt.id) ? 'selected' : ''}`}
-                  onClick={() => poll.status === 'OPEN' && handleOptionToggle(opt.id)}
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <input 
-                      type={poll.multipleChoice ? "checkbox" : "radio"} 
-                      checked={selectedOptions.includes(opt.id)}
-                      readOnly
-                    />
-                    <div className="opt-text">
-                      <strong>{opt.name}</strong>
-                      <p style={{ margin: 0 }}>{opt.description}</p>
-                    </div>
-                  </div>
-                  
-                  <button 
-                    type="button"
-                    className="btn-small" 
-                    onClick={(e) => { e.stopPropagation(); toggleOptionVoters(opt.id); }}
-                    style={{ background: 'transparent', color: 'inherit', border: '1px solid #ccc' }}
-                  >
-                    {voterIds.length} {isExpanded ? '▲' : '▼'}
-                  </button>
-                </div>
+      <div className="poll-content-layout">
+        <div className="poll-main-card">
+          <div className="poll-header-block">
+            <span className={`status-pill ${poll.status.toLowerCase()}`}>{poll.status}</span>
+            <h1>{poll.title}</h1>
+            <p>{poll.description}</p>
+          </div>
 
-                {isExpanded && (
-                  <div style={{ padding: '10px 15px', backgroundColor: '#f5f5f5', borderRadius: '4px', marginTop: '5px', fontSize: '0.9em' }}>
-                    {optionVoters.length > 0 ? (
-                      optionVoters.map(voter => (
-                        <div key={voter.id} style={{ padding: '2px 0' }}>
-                          • {voter.firstName} {voter.lastName} {voter.id === user.id && <strong style={{color: '#4caf50'}}>(Вы)</strong>}
+          <div className="voting-area">
+            <h3>Choose your option(s):</h3>
+            <div className="options-list-detailed">
+              {poll.options.map(opt => {
+                const optionResults = results?.results?.find(r => r.candidateId === opt.id);
+                const voterIds = optionResults?.voterIds || [];
+                const optionVoters = participants.filter(p => voterIds.includes(p.id));
+                const isExpanded = expandedOptions[opt.id];
+                const isSelected = selectedOptions.includes(opt.id);
+
+                return (
+                  <div key={opt.id} className="option-item-container">
+                    <div 
+                      className={`modern-vote-option ${isSelected ? 'is-selected' : ''}`}
+                      onClick={() => poll.status === 'OPEN' && handleOptionToggle(opt.id)}
+                    >
+                      <div className="option-main">
+                        <div className={`custom-checkbox ${poll.multipleChoice ? 'square' : 'circle'} ${isSelected ? 'checked' : ''}`}></div>
+                        <div className="option-info">
+                          <span className="option-name">{opt.name}</span>
+                          <span className="option-desc">{opt.description}</span>
                         </div>
-                      ))
-                    ) : (
-                      <div style={{ color: '#888' }}>No votes</div>
+                      </div>
+                      
+                      <button 
+                        type="button"
+                        className="voter-count-toggle" 
+                        onClick={(e) => { e.stopPropagation(); toggleOptionVoters(opt.id); }}
+                      >
+                        {voterIds.length} votes {isExpanded ? '▲' : '▼'}
+                      </button>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="voter-reveal-panel">
+                        {optionVoters.length > 0 ? (
+                          optionVoters.map(voter => (
+                            <div key={voter.id} className="voter-row">
+                              <div className="voter-avatar">{voter.firstName[0]}</div>
+                              <span>{voter.firstName} {voter.lastName} {voter.id === user.id && <b className="you-tag">(You)</b>}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="no-votes">No votes recorded for this choice</div>
+                        )}
+                      </div>
                     )}
                   </div>
+                );
+              })}
+            </div>
+
+            {poll.status === 'OPEN' && (
+              <div className="poll-action-footer">
+                <button className="btn-vote-submit" onClick={castVote} disabled={selectedOptions.length === 0}>
+                  {myVote.length > 0 ? "Change My Vote" : "Confirm Vote"}
+                </button>
+                {myVote.length > 0 && (
+                  <button className="btn-vote-cancel" onClick={cancelVote}>Withdraw My Vote</button>
                 )}
               </div>
-            );
-          })}
-        </div>
-
-        {poll.status === 'OPEN' && (
-          <div className="actions mt-2">
-            <button className="btn-primary" onClick={castVote} disabled={selectedOptions.length === 0}>
-              {myVote.length > 0 ? "Change Vote" : "Vote"}
-            </button>
-            {myVote.length > 0 && (
-              <button className="btn-logout ml-1" onClick={cancelVote}>Cancel My Vote</button>
             )}
           </div>
-        )}
-      </div>
+        </div>
 
-      <div className="card mt-2">
-        <h2>Live Results</h2>
-        <PollChart results={results.results} totalVotes={results.totalVotes} />
-      </div>
+        <aside className="poll-stats-sidebar">
+          <div className="sidebar-card">
+            <h2>Live Results</h2>
+            <PollChart results={results.results} totalVotes={results.totalVotes} />
+          </div>
 
-      <div className="card mt-2">
-        <h2>All Participants ({participants.length})</h2>
-        <div className="participants-list">
-          {participants.length === 0 ? <p>No votes yet.</p> : participants.map(p => (
-            <div key={p.id} className="participant-item" style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderBottom: '1px solid #eee' }}>
-              <span>{p.firstName} {p.lastName} {p.id === user.id && <strong style={{color: '#4caf50'}}>(Вы)</strong>}</span>
-              
-              {isAdminOfThisPoll && (
-                <button className="btn-small btn-danger" onClick={() => removeParticipant(p.id)}>
-                  Remove Vote
-                </button>
+          <div className="sidebar-card">
+            <h2>Participants ({participants.length})</h2>
+            <div className="participants-scroll">
+              {participants.length === 0 ? (
+                <p className="empty-text">No one has voted yet</p>
+              ) : (
+                participants.map(p => (
+                  <div key={p.id} className="participant-sidebar-item">
+                    <span>{p.firstName} {p.lastName} {p.id === user.id && <b className="you-tag">(You)</b>}</span>
+                    {isAdminOfThisPoll && (
+                      <button className="btn-kick-user" onClick={() => removeParticipant(p.id)}>Remove</button>
+                    )}
+                  </div>
+                ))
               )}
             </div>
-          ))}
-        </div>
+          </div>
+        </aside>
       </div>
     </div>
   );

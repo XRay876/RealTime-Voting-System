@@ -1,25 +1,27 @@
 package com.example.polls_service.service;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Service;
+
 import com.example.polls_service.dto.request.VoteRequest;
 import com.example.polls_service.dto.response.MyVoteResponse;
 import com.example.polls_service.dto.response.PollResultItemResponse;
 import com.example.polls_service.dto.response.PollResultsResponse;
 import com.example.polls_service.exception.BadRequestException;
-import com.example.polls_service.model.PollOption;
 import com.example.polls_service.model.Poll;
+import com.example.polls_service.model.PollOption;
 import com.example.polls_service.model.PollStatus;
 import com.example.polls_service.model.Vote;
 import com.example.polls_service.repository.PollOptionRepository;
 import com.example.polls_service.repository.VoteRepository;
+
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -43,7 +45,6 @@ public class VoteService {
             throw new BadRequestException("This poll allows only a single choice.");
         }
 
-        // Автоматически удаляем старые голоса юзера (переголосование)
         voteRepository.deleteByPollIdAndUserId(pollId, userId);
 
         List<PollOption> options = pollOptionRepository.findAllById(request.getOptionIds());

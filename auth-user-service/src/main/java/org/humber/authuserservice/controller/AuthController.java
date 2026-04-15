@@ -23,24 +23,28 @@ public class AuthController {
     private final AuthServiceImpl authService;
     private final RefreshTokenService refreshTokenService;
 
+    // gets firstName, lastName, email and password, reponse: access_token, refresh_token and data about user
     @PostMapping("/register")
     public CompletableFuture<ResponseEntity<AuthResponse>> registerUser(@Valid @RequestBody RegisterRequest request) {
         return authService.registerUser(request)
                 .thenApply(authResponse -> ResponseEntity.status(HttpStatus.CREATED).body(authResponse));
     }
 
+    // gets email and password, reponse: access_token, refresh_token and data about user
     @PostMapping("/login")
     public CompletableFuture<ResponseEntity<AuthResponse>> authenticateUser(@Valid @RequestBody LoginRequest request) {
         return authService.authenticateUser(request)
                 .thenApply(ResponseEntity::ok);
     }
 
+    // takes a valid refresh token to issue a new access token
     @PostMapping("/refresh")
     public CompletableFuture<ResponseEntity<AuthResponse>> refreshtoken(@Valid @RequestBody TokenRefreshRequest request) {
         return refreshTokenService.processRefreshToken(request.refreshToken())
                 .thenApply(ResponseEntity::ok);
     }
 
+    // a simple diagnostic endpoint
     @GetMapping("/health")
     public ResponseEntity<Map<String, String>> healthCheck() {
         return ResponseEntity.ok(Map.of(

@@ -28,7 +28,6 @@ const Register = () => {
       newErrors.email = 'Invalid email format';
     }
 
-
     const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
     if (!formData.password) {
       newErrors.password = 'Password is required';
@@ -52,54 +51,73 @@ const Register = () => {
   };
 
   return (
-    <div className="auth-container">
-      <form className="card auth-form" onSubmit={handleSubmit}>
-        <h2>Create Account</h2>
-        {errors.server && <div className="alert error">{errors.server}</div>}
-        
-        <div className="form-group">
-          <label>First Name</label>
-          <input 
-            type="text" 
-            value={formData.firstName} 
-            onChange={(e) => setFormData({...formData, firstName: e.target.value})} 
-          />
-          {errors.firstName && <span className="error-text">{errors.firstName}</span>}
-        </div>
+    <div className="auth-page">
+      <div className="auth-card">
+        <header className="auth-header">
+          <h1>Create Account</h1>
+          <p>Join our community and start polling today.</p>
+        </header>
 
-        <div className="form-group">
-          <label>Last Name</label>
-          <input 
-            type="text" 
-            value={formData.lastName} 
-            onChange={(e) => setFormData({...formData, lastName: e.target.value})} 
-          />
-          {errors.lastName && <span className="error-text">{errors.lastName}</span>}
-        </div>
+        {errors.server && <div className="error-alert">{errors.server}</div>}
 
-        <div className="form-group">
-          <label>Email</label>
-          <input 
-            type="email" 
-            value={formData.email} 
-            onChange={(e) => setFormData({...formData, email: e.target.value})} 
-          />
-          {errors.email && <span className="error-text">{errors.email}</span>}
-        </div>
-        
-        <div className="form-group">
-          <label>Password</label>
-          <input 
-            type="password" 
-            value={formData.password} 
-            onChange={(e) => setFormData({...formData, password: e.target.value})} 
-          />
-          {errors.password && <span className="error-text">{errors.password}</span>}
-        </div>
-        
-        <button type="submit" className="btn-primary full-width">Register</button>
-        <p className="auth-link">Already have an account? <Link to="/login">Login</Link></p>
-      </form>
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-grid">
+            <div className="form-group">
+              <label>First Name</label>
+              <input 
+                type="text" 
+                className={`modern-input ${errors.firstName ? 'has-error' : ''}`}
+                placeholder="John"
+                value={formData.firstName} 
+                onChange={(e) => setFormData({...formData, firstName: e.target.value})} 
+              />
+              {errors.firstName && <span className="error-hint">{errors.firstName}</span>}
+            </div>
+
+            <div className="form-group">
+              <label>Last Name</label>
+              <input 
+                type="text" 
+                className={`modern-input ${errors.lastName ? 'has-error' : ''}`}
+                placeholder="Doe"
+                value={formData.lastName} 
+                onChange={(e) => setFormData({...formData, lastName: e.target.value})} 
+              />
+              {errors.lastName && <span className="error-hint">{errors.lastName}</span>}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Email Address</label>
+            <input 
+              type="email" 
+              className={`modern-input ${errors.email ? 'has-error' : ''}`}
+              placeholder="john.doe@example.com"
+              value={formData.email} 
+              onChange={(e) => setFormData({...formData, email: e.target.value})} 
+            />
+            {errors.email && <span className="error-hint">{errors.email}</span>}
+          </div>
+          
+          <div className="form-group">
+            <label>Password</label>
+            <input 
+              type="password" 
+              className={`modern-input ${errors.password ? 'has-error' : ''}`}
+              placeholder="••••••••"
+              value={formData.password} 
+              onChange={(e) => setFormData({...formData, password: e.target.value})} 
+            />
+            {errors.password && <span className="error-hint">{errors.password}</span>}
+          </div>
+          
+          <button type="submit" className="btn-auth-primary">Sign Up</button>
+        </form>
+
+        <footer className="auth-footer">
+          <p>Already have an account? <Link to="/login" className="accent-link">Log in</Link></p>
+        </footer>
+      </div>
     </div>
   );
 };
