@@ -10,7 +10,7 @@ export const UserService = {
   updateProfile: (data) => apiClient.put('/api/v1/users/me', data),
   changePassword: (data) => apiClient.patch('/api/v1/users/me/password', data),
   promoteToAdmin: () => apiClient.post('/api/v1/users/promote-me'),
-  getUserById: (id) => apiClient.get(`/api/v1/admin/users/${id}`),
+  getUserById: (id) => apiClient.get(`/api/v1/users/${id}`),
 };
 
 export const PollsService = {

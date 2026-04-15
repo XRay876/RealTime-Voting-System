@@ -64,7 +64,7 @@ public class UserController {
                 .thenApply(v -> ResponseEntity.ok("You are now an ADMIN. Please re-login to update your token."));
     }
 
-    @GetMapping("/api/v1/admin/users/{id}")
+    @GetMapping("/api/v1/users/{id}")
     public CompletableFuture<ResponseEntity<UserResponse>> getUserById(@PathVariable UUID id) {
         return userService.getUserById(id)
                 .thenApply(ResponseEntity::ok);

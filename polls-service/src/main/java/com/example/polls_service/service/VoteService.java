@@ -100,20 +100,33 @@ public class VoteService {
         Poll poll = pollService.getPollEntity(pollId);
         List<PollOption> options = pollOptionRepository.findByPollId(pollId);
 
+        List<Vote> allVotes = voteRepository.findByPollId(pollId);
+
         List<PollResultItemResponse> resultItems = options.stream()
-                .map(option -> PollResultItemResponse.builder()
-                        .candidateId(option.getId())
-                        .candidateName(option.getName())
-                        .votes(voteRepository.countByPollIdAndOptionId(pollId, option.getId()))
-                        .build())
+                .map(option -> {
+                    List<UUID> optionVoterIds = allVotes.stream()
+                            .filter(v -> v.getOption().getId().equals(option.getId()))
+                            .map(Vote::getUserId)
+                            .toList();
+
+                    return PollResultItemResponse.builder()
+                            .candidateId(option.getId())
+                            .candidateName(option.getName())
+                            .votes(optionVoterIds.size())
+                            .voterIds(optionVoterIds)
+                            .build();
+                })
                 .toList();
 
-        List<UUID> participantIds = voteRepository.findParticipantIdsByPollId(pollId);
+        List<UUID> participantIds = allVotes.stream()
+                .map(Vote::getUserId)
+                .distinct()
+                .toList();
 
         return PollResultsResponse.builder()
                 .pollId(poll.getId())
                 .pollTitle(poll.getTitle())
-                .totalVotes(voteRepository.countByPollId(pollId))
+                .totalVotes(allVotes.size())
                 .results(resultItems)
                 .participantIds(participantIds)
                 .build();

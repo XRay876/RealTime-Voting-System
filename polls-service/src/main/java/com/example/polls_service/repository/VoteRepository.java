@@ -24,4 +24,6 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
 
     @Query("SELECT DISTINCT v.userId FROM Vote v WHERE v.poll.id = :pollId")
     List<UUID> findParticipantIdsByPollId(@Param("pollId") Long pollId);
+
+    List<Vote> findByPollId(Long pollId);
 }

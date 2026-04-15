@@ -50,8 +50,7 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth ->
-                        auth.requestMatchers("/api/v1/auth/**", "/health", "/error").permitAll()               
-                                .requestMatchers(HttpMethod.GET, "/api/v1/admin/users/*").authenticated()
+                        auth.requestMatchers("/api/v1/auth/**", "/health", "/error").permitAll()
                                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                                 .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                                 .anyRequest().authenticated()
