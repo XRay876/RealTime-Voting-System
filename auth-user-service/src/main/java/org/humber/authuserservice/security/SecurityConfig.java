@@ -33,6 +33,8 @@ public class SecurityConfig {
         authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
+
+
     }
 
     @Bean
@@ -45,6 +47,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // managing the routes which requires to be authenticated, which for all, which for only with role Admin and etc.
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)

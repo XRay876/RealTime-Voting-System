@@ -21,6 +21,9 @@ public class UserController {
 
     private final UserService userService;
 
+    //we are using CompletableFuture for async requests
+    // use ReponseEntity so we set HttpStatus (201, 400 and etc), allows to add custom headers and its automaticly wraps DTO to response
+
 
     // Fetches the profile and account details of the currently authenticated user, requires Token
     @GetMapping("/api/v1/users/me")

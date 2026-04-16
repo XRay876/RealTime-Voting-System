@@ -34,10 +34,14 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     private final JwtUtils jwtUtils;
     private final UserDetailsService userDetailsService;
 
+
+    // creating refresh token which we gonna save in db
     @Transactional
     @Override
     public RefreshToken createRefreshToken(User user) {
         refreshTokenRepository.deleteByUser(user);
+
+
 
         RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)
@@ -48,6 +52,8 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         return refreshTokenRepository.save(refreshToken);
     }
 
+
+    // checking if token is expired (7 days)
     @Async("asyncExecutor")
     @Override
     public CompletableFuture<RefreshToken> verifyExpiration(RefreshToken token) {
@@ -55,6 +61,8 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
             refreshTokenRepository.delete(token);
             throw new TokenRefreshException(token.getToken(), "Refresh token was expired. Please make a new sign in request");
         }
+
+
         return CompletableFuture.completedFuture(token);
     }
 
@@ -66,6 +74,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .orElseThrow(() -> new TokenRefreshException(requestRefreshToken, "Refresh token is not in database!"));
 
         verifyExpiration(token).join();
+
 
         User user = token.getUser();
 

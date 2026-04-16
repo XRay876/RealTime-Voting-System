@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { UserService } from '../api/services';
 
 const Profile = () => {
-  const { user, fetchUser, logout } = useAuth();
+  const { user, fetchUser, refreshTokens } = useAuth();
   const [profileData, setProfileData] = useState({ 
     firstName: user?.firstName || '', 
     lastName: user?.lastName || '' 
@@ -45,10 +45,11 @@ const Profile = () => {
   };
 
   const handleAdminPromote = async () => {
-    if (window.confirm("You will become an admin and will be logged out to refresh your session. Proceed?")) {
+    if (window.confirm("You will become an admin. Proceed?")) {
       try {
         await UserService.promoteToAdmin();
-        logout();
+        await refreshTokens();
+        notify('You are now an admin!');
       } catch (err) {
         notify('Promotion failed', 'error');
       }

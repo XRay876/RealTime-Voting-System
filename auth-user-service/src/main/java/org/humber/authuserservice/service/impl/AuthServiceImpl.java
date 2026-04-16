@@ -36,6 +36,11 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtils jwtUtils;
     private final RefreshTokenService refreshTokenService;
 
+
+    // Using CompletableFuture for async programming
+
+
+    // registration
     @Async("asyncExecutor")
     @Transactional
     @Override
@@ -61,6 +66,7 @@ public class AuthServiceImpl implements AuthService {
         return CompletableFuture.completedFuture(performAuth(cleanEmail, request.password(), user));
     }
 
+    // login wrapper
     @Async("asyncExecutor")
     @Transactional(readOnly = true)
     @Override
@@ -68,12 +74,20 @@ public class AuthServiceImpl implements AuthService {
         String cleanEmail = request.email().toLowerCase().trim();
         log.info("Authenticating user: {}", cleanEmail);
 
+        // User user = userRepository.findById(userId)
+        //         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
         User user = userRepository.findByEmailAndIsDeletedFalse(cleanEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+
         return CompletableFuture.completedFuture(performAuth(cleanEmail, request.password(), user));
+    
+        
+    
     }
 
+    // authentication
     private AuthResponse performAuth(String email, String password, User user) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, password));

@@ -23,11 +23,15 @@ public class AuthController {
     private final AuthServiceImpl authService;
     private final RefreshTokenService refreshTokenService;
 
+    //we are using CompletableFuture for async requests
+    // use ReponseEntity so we set HttpStatus (201, 400 and etc), allows to add custom headers and its automaticly wraps DTO to response
+
     // gets firstName, lastName, email and password, reponse: access_token, refresh_token and data about user
     @PostMapping("/register")
     public CompletableFuture<ResponseEntity<AuthResponse>> registerUser(@Valid @RequestBody RegisterRequest request) {
         return authService.registerUser(request)
                 .thenApply(authResponse -> ResponseEntity.status(HttpStatus.CREATED).body(authResponse));
+
     }
 
     // gets email and password, reponse: access_token, refresh_token and data about user
@@ -37,20 +41,25 @@ public class AuthController {
                 .thenApply(ResponseEntity::ok);
     }
 
+
+
     // takes a valid refresh token to issue a new access token
     @PostMapping("/refresh")
     public CompletableFuture<ResponseEntity<AuthResponse>> refreshtoken(@Valid @RequestBody TokenRefreshRequest request) {
         return refreshTokenService.processRefreshToken(request.refreshToken())
                 .thenApply(ResponseEntity::ok);
+
     }
 
     // a simple diagnostic endpoint
     @GetMapping("/health")
     public ResponseEntity<Map<String, String>> healthCheck() {
         return ResponseEntity.ok(Map.of(
+            
                 "status", "UP",
                 "service", "auth-user-service",
                 "timestamp", java.time.Instant.now().toString()
         ));
+
     }
 }

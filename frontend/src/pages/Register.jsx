@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { AuthService } from '../api/services';
+import { useAuth } from '../context/AuthContext';
 
 const Register = () => {
   const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', password: '' });
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const validate = () => {
     const newErrors = {};
@@ -43,7 +44,7 @@ const Register = () => {
     if (Object.keys(validationErrors).length > 0) return setErrors(validationErrors);
 
     try {
-      await AuthService.register(formData);
+      await register(formData);
       navigate('/');
     } catch (err) {
       setErrors({ server: err.response?.data?.message || 'Registration failed' });
@@ -67,7 +68,7 @@ const Register = () => {
               <input 
                 type="text" 
                 className={`modern-input ${errors.firstName ? 'has-error' : ''}`}
-                placeholder="John"
+                placeholder="First Name"
                 value={formData.firstName} 
                 onChange={(e) => setFormData({...formData, firstName: e.target.value})} 
               />
@@ -79,7 +80,7 @@ const Register = () => {
               <input 
                 type="text" 
                 className={`modern-input ${errors.lastName ? 'has-error' : ''}`}
-                placeholder="Doe"
+                placeholder="Last Name"
                 value={formData.lastName} 
                 onChange={(e) => setFormData({...formData, lastName: e.target.value})} 
               />

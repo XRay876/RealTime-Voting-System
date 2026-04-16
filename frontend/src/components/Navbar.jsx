@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { UserService } from '../api/services';
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshTokens } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -14,8 +14,7 @@ const Navbar = () => {
   const handlePromote = async () => {
     try {
       await UserService.promoteToAdmin();
-      alert('Successful! Please relogin.');
-      handleLogout();
+      await refreshTokens();
     } catch (e) {
       alert('Error promoting user');
     }

@@ -3,6 +3,7 @@ import { apiClient } from './client';
 export const AuthService = {
   login: (data) => apiClient.post('/api/v1/auth/login', data),
   register: (data) => apiClient.post('/api/v1/auth/register', data),
+  refresh: (refreshToken) => apiClient.post('/api/v1/auth/refresh', { refreshToken }),
 };
 
 export const UserService = {

@@ -41,7 +41,7 @@ const Login = () => {
       });
       navigate('/');
     } catch (err) {
-      setErrors({ server: 'Invalid email or password' });
+      setErrors({ server: err.response?.data?.message || 'Invalid email or password' });
     }
   };
 

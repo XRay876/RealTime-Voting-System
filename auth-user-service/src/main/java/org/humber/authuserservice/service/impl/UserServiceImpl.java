@@ -28,6 +28,10 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
+
+    // we use CompletableFuture for async programming
+
+    //getting Users using email
     @Async("asyncExecutor")
     @Override
     @Transactional(readOnly = true)
@@ -36,6 +40,8 @@ public class UserServiceImpl implements UserService {
         return CompletableFuture.completedFuture(userMapper.toResponse(user));
     }
 
+
+    // updating profile
     @Async("asyncExecutor")
     @Transactional
     @Override
@@ -46,6 +52,8 @@ public class UserServiceImpl implements UserService {
         return CompletableFuture.completedFuture(userMapper.toResponse(userRepository.save(user)));
     }
 
+
+    // change password, requires old and new passwords
     @Async("asyncExecutor")
     @Transactional
     @Override
@@ -59,6 +67,7 @@ public class UserServiceImpl implements UserService {
         return CompletableFuture.completedFuture(null);
     }
 
+    // deleting user from db
     @Async("asyncExecutor")
     @Transactional
     @Override
@@ -69,6 +78,8 @@ public class UserServiceImpl implements UserService {
         return CompletableFuture.completedFuture(null);
     }
 
+
+    // get user by Id
     @Async("asyncExecutor")
     @Override
     @Transactional(readOnly = true)
@@ -78,6 +89,8 @@ public class UserServiceImpl implements UserService {
         return CompletableFuture.completedFuture(userMapper.toResponse(user));
     }
 
+
+    // check if user exists using Email
     @Async("asyncExecutor")
     @Override
     @Transactional(readOnly = true)
@@ -85,6 +98,7 @@ public class UserServiceImpl implements UserService {
         return CompletableFuture.completedFuture(userRepository.existsByEmailAndIsDeletedFalse(email));
     }
 
+    // update Role of the user, using id and Role
     @Async("asyncExecutor")
     @Transactional
     @Override
@@ -97,6 +111,7 @@ public class UserServiceImpl implements UserService {
         return CompletableFuture.completedFuture(userMapper.toResponse(userRepository.save(user)));
     }
 
+    // promoting to Adming current user
     @Async("asyncExecutor")
     @Transactional
     @Override

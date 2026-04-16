@@ -33,6 +33,21 @@ export const AuthProvider = ({ children }) => {
     await fetchUser();
   };
 
+  const register = async (formData) => {
+    const { data } = await AuthService.register(formData);
+    localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    await fetchUser();
+  };
+
+  const refreshTokens = async () => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    const { data } = await AuthService.refresh(refreshToken);
+    localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    await fetchUser();
+  };
+
   const logout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
@@ -40,7 +55,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, fetchUser }}>
+    <AuthContext.Provider value={{ user, login, register, logout, loading, fetchUser, refreshTokens }}>
       {children}
     </AuthContext.Provider>
   );

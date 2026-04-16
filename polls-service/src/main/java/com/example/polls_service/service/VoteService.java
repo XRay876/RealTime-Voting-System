@@ -49,6 +49,8 @@ public class VoteService {
 
         List<PollOption> options = pollOptionRepository.findAllById(request.getOptionIds());
         for (PollOption option : options) {
+
+
             if (!option.getPoll().getId().equals(pollId)) {
                 throw new BadRequestException("Option " + option.getId() + " does not belong to this poll");
             }
@@ -68,6 +70,7 @@ public class VoteService {
     @Transactional
     public void cancelVote(Long pollId, UUID userId) {
         Poll poll = pollService.getPollEntity(pollId);
+
         if (poll.getStatus() != PollStatus.OPEN) {
             throw new BadRequestException("Cannot cancel vote in a closed/draft poll");
         }
@@ -81,6 +84,7 @@ public class VoteService {
         log.info("Admin removing participant {} from poll {}", participantId, pollId);
         voteRepository.deleteByPollIdAndUserId(pollId, participantId);
         broadcastUpdate(pollId);
+
     }
 
     public MyVoteResponse getMyVote(Long pollId, UUID userId) {
@@ -99,6 +103,7 @@ public class VoteService {
 
     public PollResultsResponse getResults(Long pollId) {
         Poll poll = pollService.getPollEntity(pollId);
+
         List<PollOption> options = pollOptionRepository.findByPollId(pollId);
 
         List<Vote> allVotes = voteRepository.findByPollId(pollId);
@@ -135,6 +140,7 @@ public class VoteService {
 
     private void broadcastUpdate(Long pollId) {
         PollResultsResponse results = getResults(pollId);
+        
         messagingTemplate.convertAndSend("/topic/poll/" + pollId + "/results", results);
     }
 }
